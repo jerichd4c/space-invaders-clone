@@ -11,6 +11,8 @@ const keys = {
     Space: false
 };
 
+const playerProjectiles = [];
+
 
 window.addEventListener('keydown', (e) => {
     if (keys.hasOwnProperty(e.code)) {
@@ -35,6 +37,8 @@ class Player {
         this.y = canvas.height - this.height - 20;
         this.speed = 5;
         this.color = 'lime';
+        this.cooldown = 300
+        this.lastShotTime = 0; 
     }
 
     draw(ctx) {
@@ -55,6 +59,55 @@ class Player {
         if (keys.ArrowRight && this.x < canvas.width - this.width) {
             this.x += this.speed;
         }
+        // Handle shooting 
+        if (keys.Space) {
+            this.shoot();
+        }
+    }
+
+    shoot() {
+        const currentTime = Date.now();
+        // Check if enough time has passed since the last shot
+        if (currentTime - this.lastShotTime >= this.cooldown) {
+
+            const projectileX = this.x + this.width / 2 - 2; // Center the projectile on the turret
+            const projectileY = this.y - 10;
+
+            playerProjectiles.push(new Projectile(projectileX, projectileY));
+
+            this.lastShotTime = currentTime; // Update the last shot time
+
+        }
+    }
+}
+
+// Projectile class
+
+class Projectile {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.width = 4;
+        this.height = 10;
+        this.speed = 7;
+        this.color = 'white';
+
+        this.markedForDeletion = false;
+    }
+
+    draw(ctx) {
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+    }
+
+    update() {
+        // Substracting speed to y to move the projectile upwards
+        this.y -= this.speed; 
+
+        if (this.y + this.height < 0) {
+            // If the projectile goes off the top of the canvas, mark it for deletion
+            this.markedForDeletion = true;
+        }
     }
 }
 
@@ -73,6 +126,16 @@ function gameLoop() {
 
     // Draw new frame  
     player.draw(ctx);
+
+    playerProjectiles.forEach((projectile, index) => {
+        projectile.update();
+        projectile.draw(ctx);
+
+        // Remove projectiles that are marked for deletion
+        if (projectile.markedForDeletion) {
+            playerProjectiles.splice(index, 1);
+        }
+    });
 
     // Request the next frame and repeat the loop
     requestAnimationFrame(gameLoop);
