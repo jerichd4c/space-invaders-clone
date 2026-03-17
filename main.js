@@ -111,9 +111,79 @@ class Projectile {
     }
 }
 
+// Alien class 
+
+class Alien {
+    constructor(x, y) {
+        this.width = 40;
+        this.height = 30;
+        this.x = x;
+        this.y = y;
+        this.speed = 2000; // Horizontal speed per frame
+        this.direction = 1; // 1 moves right, -1 moves left
+        this.dropDistance = 20; // Pixels to drop when changing direction
+        this.color = 'crimson';
+        this.cooldown = 1200; // Time between shots in ms
+        this.lastShotTime = 0;
+    }
+
+    draw(ctx) {
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+    }
+
+    update(boundaries) {
+        // boundaries: { left: number, right: number }
+        this.x += this.speed * this.direction;
+
+        // Reverse direction and drop when hitting canvas edges
+        if (this.x <= boundaries.left || this.x + this.width >= boundaries.right) {
+            this.direction *= -1;
+            this.y += this.dropDistance;
+        }
+    }
+
+    canShoot() {
+        const now = Date.now();
+        return now - this.lastShotTime >= this.cooldown;
+    }
+
+    shoot(createProjectile) {
+        // createProjectile should be a function that builds and stores the projectile
+        if (!this.canShoot()) return;
+
+        const projectileX = this.x + this.width / 2;
+        const projectileY = this.y + this.height;
+
+        createProjectile(projectileX, projectileY);
+        this.lastShotTime = Date.now();
+    }
+}
+
+// Helpers
+
+function rectsIntersect(a, b) {
+    return (
+        a.x < b.x + b.width &&
+        a.x + a.width > b.x &&
+        a.y < b.y + b.height &&
+        a.y + a.height > b.y
+    );
+}
+
 // Player instance 
 
 const player = new Player();
+
+// Aliens setup
+
+const aliens = [
+    new Alien(80, 60),
+    new Alien(160, 60),
+    new Alien(240, 60),
+    new Alien(320, 60),
+    new Alien(400, 60)
+];
 
 // Game loop
 
@@ -127,15 +197,32 @@ function gameLoop() {
     // Draw new frame  
     player.draw(ctx);
 
-    playerProjectiles.forEach((projectile, index) => {
-        projectile.update();
-        projectile.draw(ctx);
-
-        // Remove projectiles that are marked for deletion
-        if (projectile.markedForDeletion) {
-            playerProjectiles.splice(index, 1);
-        }
+    // Update and draw aliens
+    aliens.forEach((alien) => {
+        alien.update({ left: 0, right: canvas.width });
+        alien.draw(ctx);
     });
+
+    for (let i = playerProjectiles.length - 1; i >= 0; i--) {
+        const projectile = playerProjectiles[i];
+        projectile.update();
+
+        // Check collision vs aliens
+        for (let j = aliens.length - 1; j >= 0; j--) {
+            const alien = aliens[j];
+            if (rectsIntersect(projectile, alien)) {
+                projectile.markedForDeletion = true;
+                aliens.splice(j, 1);
+                break; 
+            }
+        }
+
+        if (!projectile.markedForDeletion) {
+            projectile.draw(ctx);
+        } else {
+            playerProjectiles.splice(i, 1);
+        }
+    }
 
     // Request the next frame and repeat the loop
     requestAnimationFrame(gameLoop);
