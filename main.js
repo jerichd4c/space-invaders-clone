@@ -1,9 +1,20 @@
-// Canvas
-
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
+const stageValue = document.getElementById('stage-value');
+const scoreValue = document.getElementById('score-value');
 
-// Inputs
+let gameOver = false;
+let formationDirection = 1;
+const formationDrop = 20;
+let stage = 1;
+const formationSpeedBase = 1.8;
+let formationSpeed = formationSpeedBase;
+let score = 0;
+
+function updateHUD() {
+    stageValue.textContent = stage;
+    scoreValue.textContent = score;
+}
 
 const keys = {
     ArrowLeft: false,
@@ -15,73 +26,53 @@ const playerProjectiles = [];
 
 
 window.addEventListener('keydown', (e) => {
-    if (keys.hasOwnProperty(e.code)) {
-        keys[e.code] = true;
-    }
+    if (keys.hasOwnProperty(e.code)) keys[e.code] = true;
 });
 
 window.addEventListener('keyup', (e) => {
-    if (keys.hasOwnProperty(e.code)) {
-        keys[e.code] = false;
-    }
+    if (keys.hasOwnProperty(e.code)) keys[e.code] = false;
 });
-
-// Player class 
 
 class Player {
     constructor() {
         this.width = 50;
         this.height = 30;
-        // Position in canvas
         this.x = canvas.width / 2 - this.width / 2;
         this.y = canvas.height - this.height - 20;
         this.speed = 5;
         this.color = 'lime';
-        this.cooldown = 300
+        this.cooldown = 300;
         this.lastShotTime = 0; 
     }
 
     draw(ctx) {
-
         ctx.fillStyle = this.color;
-        // Draw the main body of the player
         ctx.fillRect(this.x, this.y, this.width, this.height);
-        // Draw the turret of the player
         ctx.fillRect(this.x + this.width / 2 - 5, this.y - 10, 10, 10);
     }
 
     update() {
-        // Move left without going out of bounds
         if (keys.ArrowLeft && this.x > 0) {
             this.x -= this.speed;
         }
-        // Move right without going out of bounds
         if (keys.ArrowRight && this.x < canvas.width - this.width) {
             this.x += this.speed;
         }
-        // Handle shooting 
         if (keys.Space) {
             this.shoot();
         }
     }
 
     shoot() {
-        const currentTime = Date.now();
-        // Check if enough time has passed since the last shot
-        if (currentTime - this.lastShotTime >= this.cooldown) {
+        const now = Date.now();
+        if (now - this.lastShotTime < this.cooldown) return;
 
-            const projectileX = this.x + this.width / 2 - 2; // Center the projectile on the turret
-            const projectileY = this.y - 10;
-
-            playerProjectiles.push(new Projectile(projectileX, projectileY));
-
-            this.lastShotTime = currentTime; // Update the last shot time
-
-        }
+        const projectileX = this.x + this.width / 2 - 2;
+        const projectileY = this.y - 10;
+        playerProjectiles.push(new Projectile(projectileX, projectileY));
+        this.lastShotTime = now;
     }
 }
-
-// Projectile class
 
 class Projectile {
     constructor(x, y) {
@@ -101,17 +92,11 @@ class Projectile {
     }
 
     update() {
-        // Substracting speed to y to move the projectile upwards
         this.y -= this.speed; 
 
-        if (this.y + this.height < 0) {
-            // If the projectile goes off the top of the canvas, mark it for deletion
-            this.markedForDeletion = true;
-        }
+        if (this.y + this.height < 0) this.markedForDeletion = true;
     }
 }
-
-// Alien class 
 
 class Alien {
     constructor(x, y) {
@@ -119,48 +104,14 @@ class Alien {
         this.height = 30;
         this.x = x;
         this.y = y;
-        this.speed = 2000; // Horizontal speed per frame
-        this.direction = 1; // 1 moves right, -1 moves left
-        this.dropDistance = 20; // Pixels to drop when changing direction
         this.color = 'crimson';
-        this.cooldown = 1200; // Time between shots in ms
-        this.lastShotTime = 0;
     }
 
     draw(ctx) {
         ctx.fillStyle = this.color;
         ctx.fillRect(this.x, this.y, this.width, this.height);
     }
-
-    update(boundaries) {
-        // boundaries: { left: number, right: number }
-        this.x += this.speed * this.direction;
-
-        // Reverse direction and drop when hitting canvas edges
-        if (this.x <= boundaries.left || this.x + this.width >= boundaries.right) {
-            this.direction *= -1;
-            this.y += this.dropDistance;
-        }
-    }
-
-    canShoot() {
-        const now = Date.now();
-        return now - this.lastShotTime >= this.cooldown;
-    }
-
-    shoot(createProjectile) {
-        // createProjectile should be a function that builds and stores the projectile
-        if (!this.canShoot()) return;
-
-        const projectileX = this.x + this.width / 2;
-        const projectileY = this.y + this.height;
-
-        createProjectile(projectileX, projectileY);
-        this.lastShotTime = Date.now();
-    }
 }
-
-// Helpers
 
 function rectsIntersect(a, b) {
     return (
@@ -171,19 +122,28 @@ function rectsIntersect(a, b) {
     );
 }
 
-// Player instance 
-
 const player = new Player();
 
-// Aliens setup
+const aliens = [];
 
-const aliens = [
-    new Alien(80, 60),
-    new Alien(160, 60),
-    new Alien(240, 60),
-    new Alien(320, 60),
-    new Alien(400, 60)
-];
+function createFormation(rows = 4, cols = 8) {
+    aliens.length = 0;
+    const startX = 60;
+    const startY = 60;
+    const gapX = 20;
+    const gapY = 24;
+
+    formationSpeed = formationSpeedBase + (stage - 1) * 0.35;
+
+    for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+            const x = startX + c * (40 + gapX);
+            const y = startY + r * (30 + gapY);
+            aliens.push(new Alien(x, y));
+        }
+    }
+    formationDirection = 1;
+}
 
 // Game loop
 
@@ -192,16 +152,48 @@ function gameLoop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Update and draw the player
-    player.update();
+    if (!gameOver) {
+        player.update();
+    }
 
     // Draw new frame  
     player.draw(ctx);
 
     // Update and draw aliens
-    aliens.forEach((alien) => {
-        alien.update({ left: 0, right: canvas.width });
+    if (!gameOver && aliens.length) {
+        let minX = Infinity;
+        let maxX = -Infinity;
+
+        aliens.forEach((alien) => {
+            minX = Math.min(minX, alien.x);
+            maxX = Math.max(maxX, alien.x + alien.width);
+        });
+
+        if (minX <= 0 || maxX >= canvas.width) {
+            formationDirection *= -1;
+            aliens.forEach((alien) => {
+                alien.y += formationDrop;
+            });
+        }
+    }
+
+    for (let i = aliens.length - 1; i >= 0; i--) {
+        const alien = aliens[i];
+
+        if (!gameOver) {
+            alien.x += formationSpeed * formationDirection;
+            if (rectsIntersect(alien, player) || alien.y + alien.height >= player.y) gameOver = true;
+        }
+
         alien.draw(ctx);
-    });
+    }
+
+    if (!gameOver && aliens.length === 0) {
+        stage += 1;
+        playerProjectiles.length = 0;
+        createFormation();
+        updateHUD();
+    }
 
     for (let i = playerProjectiles.length - 1; i >= 0; i--) {
         const projectile = playerProjectiles[i];
@@ -210,11 +202,13 @@ function gameLoop() {
         // Check collision vs aliens
         for (let j = aliens.length - 1; j >= 0; j--) {
             const alien = aliens[j];
-            if (rectsIntersect(projectile, alien)) {
-                projectile.markedForDeletion = true;
-                aliens.splice(j, 1);
-                break; 
-            }
+            if (!rectsIntersect(projectile, alien)) continue;
+
+            projectile.markedForDeletion = true;
+            aliens.splice(j, 1);
+            score += 100;
+            updateHUD();
+            break;
         }
 
         if (!projectile.markedForDeletion) {
@@ -224,9 +218,20 @@ function gameLoop() {
         }
     }
 
+    if (gameOver) {
+        ctx.fillStyle = 'white';
+        ctx.font = '28px Courier New';
+        ctx.textAlign = 'center';
+        ctx.fillText('Game Over', canvas.width / 2, canvas.height / 2);
+        ctx.font = '20px Courier New';
+        ctx.fillText(`Final Score: ${score}`, canvas.width / 2, canvas.height / 2 + 30);
+    }
+
     // Request the next frame and repeat the loop
     requestAnimationFrame(gameLoop);
 }
 
 // Start the game loop
+createFormation();
+updateHUD();
 gameLoop();

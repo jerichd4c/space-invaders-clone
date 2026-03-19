@@ -7,8 +7,12 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="game-container">
-        <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <div id="layout">
+        <div id="hud-left" class="hud">Stage: <span id="stage-value">1</span></div>
+        <div id="game-container">
+            <canvas id="gameCanvas" width="800" height="600"></canvas>
+        </div>
+        <div id="hud-right" class="hud">Score: <span id="score-value">0</span></div>
     </div>
 
     <script src="main.js"></script>

@@ -7,10 +7,27 @@ body {
     align-items: center;
     height: 100vh;
     font-family: 'Courier New', Courier, monospace;
-    
+}
+
+#layout {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+#game-container {
+    position: relative;
 }
 
 #gameCanvas {
     background-color: #000;
     border: 2px solid #33ff00;
+}
+
+.hud {
+    color: #33ff00;
+    font-size: 24px;
+    min-width: 120px;
+    text-align: center;
+    user-select: none;
 }
