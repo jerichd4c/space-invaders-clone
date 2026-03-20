@@ -6,9 +6,15 @@ const scoreValue = document.getElementById('score-value');
 const sounds = {
     shoot: new Audio('sounds/shoot.wav'),
     explosion: new Audio('sounds/explosion.wav'),
-    move: new Audio('sounds/move.wav')
+    move: [
+        new Audio('sounds/fastinvader1.wav'),
+        new Audio('sounds/fastinvader2.wav'),
+        new Audio('sounds/fastinvader3.wav'),
+        new Audio('sounds/fastinvader4.wav')
+    ]
 };
 let lastMoveSoundTime = 0;
+let moveSoundIndex = 0;
 
 let gameOver = false;
 let formationDirection = 1;
@@ -241,10 +247,12 @@ function gameLoop() {
         }
 
         const now = Date.now();
-        const delay = Math.max(100, 800 - (formationSpeed * 100));
+        const delay = Math.max(100, 800 - (formationSpeed * 150));
         if (now - lastMoveSoundTime > delay) {
-            sounds.move.currentTime = 0;
-            sounds.move.play().catch(() => { });
+            const currentSound = sounds.move[moveSoundIndex];
+            currentSound.currentTime = 0;
+            currentSound.play().catch(() => { });
+            moveSoundIndex = (moveSoundIndex + 1) % 4;
             lastMoveSoundTime = now;
         }
     }
