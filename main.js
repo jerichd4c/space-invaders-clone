@@ -7,7 +7,7 @@ let gameOver = false;
 let formationDirection = 1;
 const formationDrop = 20;
 let stage = 1;
-const formationSpeedBase = 1.8;
+const formationSpeedBase = 0.5;
 let formationSpeed = formationSpeedBase;
 let score = 0;
 
@@ -42,9 +42,9 @@ class Player {
         this.height = 30;
         this.x = canvas.width / 2 - this.width / 2;
         this.y = canvas.height - this.height - 20;
-        this.speed = 5;
+        this.speed = 2.5;
         this.color = 'lime';
-        this.cooldown = 300;
+        this.cooldown = 500;
         this.lastShotTime = 0; 
     }
 
@@ -83,7 +83,7 @@ class Projectile {
         this.y = y;
         this.width = 4;
         this.height = 10;
-        this.speed = 7;
+        this.speed = 4;
         this.color = 'white';
 
         this.markedForDeletion = false;
@@ -159,7 +159,7 @@ function initBarriers() {
     
     for (let i = 0; i < 4; i++) {
         const startX = spacing * (i + 1) - (shape[0].length * blockSize) / 2;
-        const startY = 450;
+        const startY = canvas.height - 150;
         
         for (let r = 0; r < shape.length; r++) {
             for (let c = 0; c < shape[r].length; c++) {
@@ -178,7 +178,7 @@ function createFormation(rows = 4, cols = 8) {
     const gapX = 20;
     const gapY = 24;
 
-    formationSpeed = formationSpeedBase + (stage - 1) * 0.35;
+    formationSpeed = formationSpeedBase + (stage - 1) * 0.15;
 
     for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
