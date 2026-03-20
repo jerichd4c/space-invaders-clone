@@ -26,7 +26,10 @@ const playerProjectiles = [];
 
 
 window.addEventListener('keydown', (e) => {
-    if (keys.hasOwnProperty(e.code)) keys[e.code] = true;
+    if (keys.hasOwnProperty(e.code)) {
+        keys[e.code] = true;
+        e.preventDefault();
+    }
 });
 
 window.addEventListener('keyup', (e) => {
@@ -113,6 +116,22 @@ class Alien {
     }
 }
 
+class BarrierBlock {
+    constructor(x, y) {
+        this.width = 10;
+        this.height = 10;
+        this.x = x;
+        this.y = y;
+        this.color = '#33ff00';
+        this.markedForDeletion = false;
+    }
+
+    draw(ctx) {
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+    }
+}
+
 function rectsIntersect(a, b) {
     return (
         a.x < b.x + b.width &&
@@ -125,6 +144,32 @@ function rectsIntersect(a, b) {
 const player = new Player();
 
 const aliens = [];
+let barrierBlocks = [];
+
+function initBarriers() {
+    barrierBlocks = [];
+    const spacing = canvas.width / 5;
+    const blockSize = 10;
+    const shape = [
+        [0, 1, 1, 1, 1, 0],
+        [1, 1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1],
+        [1, 1, 0, 0, 1, 1]
+    ];
+    
+    for (let i = 0; i < 4; i++) {
+        const startX = spacing * (i + 1) - (shape[0].length * blockSize) / 2;
+        const startY = 450;
+        
+        for (let r = 0; r < shape.length; r++) {
+            for (let c = 0; c < shape[r].length; c++) {
+                if (shape[r][c] === 1) {
+                    barrierBlocks.push(new BarrierBlock(startX + c * blockSize, startY + r * blockSize));
+                }
+            }
+        }
+    }
+}
 
 function createFormation(rows = 4, cols = 8) {
     aliens.length = 0;
@@ -159,6 +204,15 @@ function gameLoop() {
     // Draw new frame  
     player.draw(ctx);
 
+    // Update and draw barriers
+    for (let i = barrierBlocks.length - 1; i >= 0; i--) {
+        if (barrierBlocks[i].markedForDeletion) {
+            barrierBlocks.splice(i, 1);
+        } else {
+            barrierBlocks[i].draw(ctx);
+        }
+    }
+
     // Update and draw aliens
     if (!gameOver && aliens.length) {
         let minX = Infinity;
@@ -183,6 +237,13 @@ function gameLoop() {
         if (!gameOver) {
             alien.x += formationSpeed * formationDirection;
             if (rectsIntersect(alien, player) || alien.y + alien.height >= player.y) gameOver = true;
+            
+            // Check collision vs barriers
+            for (let b = 0; b < barrierBlocks.length; b++) {
+                if (!barrierBlocks[b].markedForDeletion && rectsIntersect(alien, barrierBlocks[b])) {
+                    barrierBlocks[b].markedForDeletion = true;
+                }
+            }
         }
 
         alien.draw(ctx);
@@ -199,16 +260,27 @@ function gameLoop() {
         const projectile = playerProjectiles[i];
         projectile.update();
 
-        // Check collision vs aliens
-        for (let j = aliens.length - 1; j >= 0; j--) {
-            const alien = aliens[j];
-            if (!rectsIntersect(projectile, alien)) continue;
+        // Check collision vs barriers
+        for (let b = 0; b < barrierBlocks.length; b++) {
+            if (!barrierBlocks[b].markedForDeletion && rectsIntersect(projectile, barrierBlocks[b])) {
+                barrierBlocks[b].markedForDeletion = true;
+                projectile.markedForDeletion = true;
+                break;
+            }
+        }
 
-            projectile.markedForDeletion = true;
-            aliens.splice(j, 1);
-            score += 100;
-            updateHUD();
-            break;
+        if (!projectile.markedForDeletion) {
+            // Check collision vs aliens
+            for (let j = aliens.length - 1; j >= 0; j--) {
+                const alien = aliens[j];
+                if (!rectsIntersect(projectile, alien)) continue;
+
+                projectile.markedForDeletion = true;
+                aliens.splice(j, 1);
+                score += 100;
+                updateHUD();
+                break;
+            }
         }
 
         if (!projectile.markedForDeletion) {
@@ -232,6 +304,7 @@ function gameLoop() {
 }
 
 // Start the game loop
+initBarriers();
 createFormation();
 updateHUD();
 gameLoop();
