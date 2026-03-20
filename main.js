@@ -3,6 +3,13 @@ const ctx = canvas.getContext('2d');
 const stageValue = document.getElementById('stage-value');
 const scoreValue = document.getElementById('score-value');
 
+const sounds = {
+    shoot: new Audio('sounds/shoot.wav'),
+    explosion: new Audio('sounds/explosion.wav'),
+    move: new Audio('sounds/move.wav')
+};
+let lastMoveSoundTime = 0;
+
 let gameOver = false;
 let formationDirection = 1;
 const formationDrop = 20;
@@ -45,7 +52,7 @@ class Player {
         this.speed = 2.5;
         this.color = 'lime';
         this.cooldown = 500;
-        this.lastShotTime = 0; 
+        this.lastShotTime = 0;
     }
 
     draw(ctx) {
@@ -74,6 +81,9 @@ class Player {
         const projectileY = this.y - 10;
         playerProjectiles.push(new Projectile(projectileX, projectileY));
         this.lastShotTime = now;
+
+        sounds.shoot.currentTime = 0;
+        sounds.shoot.play().catch(() => { });
     }
 }
 
@@ -95,7 +105,7 @@ class Projectile {
     }
 
     update() {
-        this.y -= this.speed; 
+        this.y -= this.speed;
 
         if (this.y + this.height < 0) this.markedForDeletion = true;
     }
@@ -156,11 +166,11 @@ function initBarriers() {
         [1, 1, 1, 1, 1, 1],
         [1, 1, 0, 0, 1, 1]
     ];
-    
+
     for (let i = 0; i < 4; i++) {
         const startX = spacing * (i + 1) - (shape[0].length * blockSize) / 2;
         const startY = canvas.height - 150;
-        
+
         for (let r = 0; r < shape.length; r++) {
             for (let c = 0; c < shape[r].length; c++) {
                 if (shape[r][c] === 1) {
@@ -229,6 +239,14 @@ function gameLoop() {
                 alien.y += formationDrop;
             });
         }
+
+        const now = Date.now();
+        const delay = Math.max(100, 800 - (formationSpeed * 100));
+        if (now - lastMoveSoundTime > delay) {
+            sounds.move.currentTime = 0;
+            sounds.move.play().catch(() => { });
+            lastMoveSoundTime = now;
+        }
     }
 
     for (let i = aliens.length - 1; i >= 0; i--) {
@@ -237,7 +255,7 @@ function gameLoop() {
         if (!gameOver) {
             alien.x += formationSpeed * formationDirection;
             if (rectsIntersect(alien, player) || alien.y + alien.height >= player.y) gameOver = true;
-            
+
             // Check collision vs barriers
             for (let b = 0; b < barrierBlocks.length; b++) {
                 if (!barrierBlocks[b].markedForDeletion && rectsIntersect(alien, barrierBlocks[b])) {
@@ -279,6 +297,9 @@ function gameLoop() {
                 aliens.splice(j, 1);
                 score += 100;
                 updateHUD();
+
+                sounds.explosion.currentTime = 0;
+                sounds.explosion.play().catch(() => { });
                 break;
             }
         }
