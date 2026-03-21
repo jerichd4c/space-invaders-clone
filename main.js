@@ -21,6 +21,9 @@ playerSprites.alive.src = 'sprites/Ship-export.png';
 playerSprites.death1.src = 'sprites/Death_animation1-export.png';
 playerSprites.death2.src = 'sprites/Death_animation2-export.png';
 
+const impactSprite = new Image();
+impactSprite.src = 'sprites/Impact_effect-export.png';
+
 const sounds = {
     shoot: new Audio('sounds/shoot.wav'),
     explosion: new Audio('sounds/explosion.wav'),
@@ -125,19 +128,35 @@ class Projectile {
         this.height = 10;
         this.speed = 4;
         this.color = 'white';
-
+        this.state = 'moving';
+        this.impactTimer = 0;
         this.markedForDeletion = false;
     }
 
     draw(ctx) {
-        ctx.fillStyle = this.color;
-        ctx.fillRect(this.x, this.y, this.width, this.height);
+        if (this.state === 'moving') {
+            ctx.fillStyle = this.color;
+            ctx.fillRect(this.x, this.y, this.width, this.height);
+        } else if (this.state === 'impact') {
+            const size = 48;
+            ctx.drawImage(impactSprite, this.x - size / 2 + this.width / 2, 0, size, size);
+        }
     }
 
     update() {
-        this.y -= this.speed;
-
-        if (this.y + this.height < 0) this.markedForDeletion = true;
+        if (this.state === 'moving') {
+            this.y -= this.speed;
+            if (this.y < 100) this.color = 'red';
+            if (this.y <= 0) {
+                this.y = 0;
+                this.state = 'impact';
+                this.impactTimer = Date.now();
+            }
+        } else if (this.state === 'impact') {
+            if (Date.now() - this.impactTimer > 200) {
+                this.markedForDeletion = true;
+            }
+        }
     }
 }
 
