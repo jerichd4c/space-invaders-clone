@@ -76,10 +76,10 @@ window.addEventListener('keyup', (e) => {
 
 class Player {
     constructor() {
-        this.width = 60;
-        this.height = 36;
+        this.width = 75;
+        this.height = 50;
         this.x = canvas.width / 2 - this.width / 2;
-        this.y = canvas.height - this.height - 20;
+        this.y = canvas.height - this.height - 60;
         this.speed = 2.5;
         this.cooldown = 500;
         this.lastShotTime = 0;
@@ -142,7 +142,7 @@ class Projectile {
             ctx.fillStyle = this.color;
             ctx.fillRect(this.x, this.y, this.width, this.height);
         } else if (this.state === 'impact') {
-            const size = 48;
+            const size = 50;
             ctx.drawImage(impactSprite, this.x - size / 2 + this.width / 2, 0, size, size);
         }
     }
@@ -168,8 +168,8 @@ class Projectile {
 
 class Alien {
     constructor(x, y) {
-        this.width = 48;
-        this.height = 36;
+        this.width = 65;
+        this.height = 50;
         this.x = x;
         this.y = y;
         this.state = 'alive';
@@ -197,9 +197,9 @@ class Alien {
 }
 
 class BarrierBlock {
-    constructor(x, y, localCol, localRow) {
-        this.width = 10;
-        this.height = 10;
+    constructor(x, y, localCol, localRow, size = 10) {
+        this.width = size;
+        this.height = size;
         this.x = x;
         this.y = y;
         this.localCol = localCol;
@@ -240,7 +240,7 @@ let barrierBlocks = [];
 function initBarriers() {
     barrierBlocks = [];
     const spacing = canvas.width / 5;
-    const blockSize = 10;
+    const blockSize = 21;
     const shape = [
         [0, 1, 1, 1, 1, 0],
         [1, 1, 1, 1, 1, 1],
@@ -250,12 +250,12 @@ function initBarriers() {
 
     for (let i = 0; i < 4; i++) {
         const startX = spacing * (i + 1) - (shape[0].length * blockSize) / 2;
-        const startY = canvas.height - 150;
+        const startY = canvas.height - 240;
 
         for (let r = 0; r < shape.length; r++) {
             for (let c = 0; c < shape[r].length; c++) {
                 if (shape[r][c] === 1) {
-                    barrierBlocks.push(new BarrierBlock(startX + c * blockSize, startY + r * blockSize, c, r));
+                    barrierBlocks.push(new BarrierBlock(startX + c * blockSize, startY + r * blockSize, c, r, blockSize));
                 }
             }
         }
@@ -273,8 +273,8 @@ function createFormation(rows = 4, cols = 8) {
 
     for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
-            const x = startX + c * (48 + gapX);
-            const y = startY + r * (36 + gapY);
+            const x = startX + c * (65 + gapX);
+            const y = startY + r * (50 + gapY);
             aliens.push(new Alien(x, y));
         }
     }
