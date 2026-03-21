@@ -24,6 +24,9 @@ playerSprites.death2.src = 'sprites/Death_animation2-export.png';
 const impactSprite = new Image();
 impactSprite.src = 'sprites/Impact_effect-export.png';
 
+const barrierSprite = new Image();
+barrierSprite.src = 'sprites/Barrier_fixed-export.png';
+
 const sounds = {
     shoot: new Audio('sounds/shoot.wav'),
     explosion: new Audio('sounds/explosion.wav'),
@@ -194,18 +197,29 @@ class Alien {
 }
 
 class BarrierBlock {
-    constructor(x, y) {
+    constructor(x, y, localCol, localRow) {
         this.width = 10;
         this.height = 10;
         this.x = x;
         this.y = y;
-        this.color = '#33ff00';
+        this.localCol = localCol;
+        this.localRow = localRow;
         this.markedForDeletion = false;
     }
 
     draw(ctx) {
-        ctx.fillStyle = this.color;
-        ctx.fillRect(this.x, this.y, this.width, this.height);
+        // Sprite may be higher resolution than the 6-col x 4-row block grid.
+        // Scale the source rect proportionally so each block samples its
+        // correct portion of the sprite at any resolution.
+        const cols = 6;
+        const rows = 4;
+        const sw = barrierSprite.naturalWidth / cols;
+        const sh = barrierSprite.naturalHeight / rows;
+        ctx.drawImage(
+            barrierSprite,
+            this.localCol * sw, this.localRow * sh, sw, sh,
+            this.x, this.y, this.width, this.height
+        );
     }
 }
 
@@ -241,7 +255,7 @@ function initBarriers() {
         for (let r = 0; r < shape.length; r++) {
             for (let c = 0; c < shape[r].length; c++) {
                 if (shape[r][c] === 1) {
-                    barrierBlocks.push(new BarrierBlock(startX + c * blockSize, startY + r * blockSize));
+                    barrierBlocks.push(new BarrierBlock(startX + c * blockSize, startY + r * blockSize, c, r));
                 }
             }
         }
