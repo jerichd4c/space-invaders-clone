@@ -8,9 +8,18 @@ const alienSprites = {
     frame2: new Image(),
     death: new Image()
 };
-alienSprites.frame1.src = 'sprites/Invader_sprite1.png';
-alienSprites.frame2.src = 'sprites/Invader_sprite2.png';
-alienSprites.death.src = 'sprites/Invader_death_animation.png';
+alienSprites.frame1.src = 'sprites/Invader_sprite1-export.png';
+alienSprites.frame2.src = 'sprites/Invader_sprite2-export.png';
+alienSprites.death.src = 'sprites/Invader_death_animation-export.png';
+
+const playerSprites = {
+    alive: new Image(),
+    death1: new Image(),
+    death2: new Image()
+};
+playerSprites.alive.src = 'sprites/Ship-export.png';
+playerSprites.death1.src = 'sprites/Death_animation1-export.png';
+playerSprites.death2.src = 'sprites/Death_animation2-export.png';
 
 const sounds = {
     shoot: new Audio('sounds/shoot.wav'),
@@ -60,20 +69,26 @@ window.addEventListener('keyup', (e) => {
 
 class Player {
     constructor() {
-        this.width = 50;
-        this.height = 30;
+        this.width = 60;
+        this.height = 36;
         this.x = canvas.width / 2 - this.width / 2;
         this.y = canvas.height - this.height - 20;
         this.speed = 2.5;
-        this.color = 'lime';
         this.cooldown = 500;
         this.lastShotTime = 0;
+        this.state = 'alive';
+        this.deathTimer = 0;
     }
 
     draw(ctx) {
-        ctx.fillStyle = this.color;
-        ctx.fillRect(this.x, this.y, this.width, this.height);
-        ctx.fillRect(this.x + this.width / 2 - 5, this.y - 10, 10, 10);
+        if (this.state === 'alive') {
+            ctx.drawImage(playerSprites.alive, this.x, this.y, this.width, this.height);
+        } else if (this.state === 'dying') {
+            const now = Date.now();
+            const frame = Math.floor((now - this.deathTimer) / 150) % 2;
+            const sprite = frame === 0 ? playerSprites.death1 : playerSprites.death2;
+            ctx.drawImage(sprite, this.x, this.y, this.width, this.height);
+        }
     }
 
     update() {
@@ -128,8 +143,8 @@ class Projectile {
 
 class Alien {
     constructor(x, y) {
-        this.width = 40;
-        this.height = 30;
+        this.width = 48;
+        this.height = 36;
         this.x = x;
         this.y = y;
         this.state = 'alive';
@@ -222,8 +237,8 @@ function createFormation(rows = 4, cols = 8) {
 
     for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
-            const x = startX + c * (40 + gapX);
-            const y = startY + r * (30 + gapY);
+            const x = startX + c * (48 + gapX);
+            const y = startY + r * (36 + gapY);
             aliens.push(new Alien(x, y));
         }
     }
@@ -296,7 +311,11 @@ function gameLoop() {
 
         if (!gameOver && alien.state === 'alive') {
             alien.x += formationSpeed * formationDirection;
-            if (rectsIntersect(alien, player) || alien.y + alien.height >= player.y) gameOver = true;
+            if (rectsIntersect(alien, player) || alien.y + alien.height >= player.y) {
+                gameOver = true;
+                player.state = 'dying';
+                player.deathTimer = Date.now();
+            }
 
             // Check collision vs barriers
             for (let b = 0; b < barrierBlocks.length; b++) {
