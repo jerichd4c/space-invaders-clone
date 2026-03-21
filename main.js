@@ -27,6 +27,7 @@ impactSprite.src = 'sprites/Impact_effect-export.png';
 const sounds = {
     shoot: new Audio('sounds/shoot.wav'),
     explosion: new Audio('sounds/explosion.wav'),
+    crash: new Audio('sounds/crash.wav'),
     move: [
         new Audio('sounds/fastinvader1.wav'),
         new Audio('sounds/fastinvader2.wav'),
@@ -151,6 +152,8 @@ class Projectile {
                 this.y = 0;
                 this.state = 'impact';
                 this.impactTimer = Date.now();
+                sounds.crash.currentTime = 0;
+                sounds.crash.play().catch(() => { });
             }
         } else if (this.state === 'impact') {
             if (Date.now() - this.impactTimer > 200) {
@@ -334,6 +337,8 @@ function gameLoop() {
                 gameOver = true;
                 player.state = 'dying';
                 player.deathTimer = Date.now();
+                sounds.crash.currentTime = 0;
+                sounds.crash.play().catch(() => { });
             }
 
             // Check collision vs barriers
