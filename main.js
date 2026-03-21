@@ -3,6 +3,15 @@ const ctx = canvas.getContext('2d');
 const stageValue = document.getElementById('stage-value');
 const scoreValue = document.getElementById('score-value');
 
+const alienSprites = {
+    frame1: new Image(),
+    frame2: new Image(),
+    death: new Image()
+};
+alienSprites.frame1.src = 'sprites/Invader_sprite1.png';
+alienSprites.frame2.src = 'sprites/Invader_sprite2.png';
+alienSprites.death.src = 'sprites/Invader_death_animation.png';
+
 const sounds = {
     shoot: new Audio('sounds/shoot.wav'),
     explosion: new Audio('sounds/explosion.wav'),
@@ -123,12 +132,27 @@ class Alien {
         this.height = 30;
         this.x = x;
         this.y = y;
-        this.color = 'crimson';
+        this.state = 'alive';
+        this.deathTimer = 0;
+        this.markedForDeletion = false;
     }
 
     draw(ctx) {
-        ctx.fillStyle = this.color;
-        ctx.fillRect(this.x, this.y, this.width, this.height);
+        if (this.state === 'alive') {
+            const sprite = (moveSoundIndex % 2 === 0) ? alienSprites.frame1 : alienSprites.frame2;
+            ctx.drawImage(sprite, this.x, this.y, this.width, this.height);
+        } else if (this.state === 'dying') {
+            ctx.drawImage(alienSprites.death, this.x, this.y, this.width, this.height);
+        }
+    }
+
+    update() {
+        if (this.state === 'dying') {
+            const now = Date.now();
+            if (now - this.deathTimer > 300) {
+                this.markedForDeletion = true;
+            }
+        }
     }
 }
 
@@ -233,16 +257,20 @@ function gameLoop() {
     if (!gameOver && aliens.length) {
         let minX = Infinity;
         let maxX = -Infinity;
+        let aliveCount = 0;
 
         aliens.forEach((alien) => {
-            minX = Math.min(minX, alien.x);
-            maxX = Math.max(maxX, alien.x + alien.width);
+            if (alien.state === 'alive') {
+                minX = Math.min(minX, alien.x);
+                maxX = Math.max(maxX, alien.x + alien.width);
+                aliveCount++;
+            }
         });
 
-        if (minX <= 0 || maxX >= canvas.width) {
+        if (aliveCount > 0 && (minX <= 0 || maxX >= canvas.width)) {
             formationDirection *= -1;
             aliens.forEach((alien) => {
-                alien.y += formationDrop;
+                if (alien.state === 'alive') alien.y += formationDrop;
             });
         }
 
@@ -260,7 +288,13 @@ function gameLoop() {
     for (let i = aliens.length - 1; i >= 0; i--) {
         const alien = aliens[i];
 
-        if (!gameOver) {
+        alien.update();
+        if (alien.markedForDeletion) {
+            aliens.splice(i, 1);
+            continue;
+        }
+
+        if (!gameOver && alien.state === 'alive') {
             alien.x += formationSpeed * formationDirection;
             if (rectsIntersect(alien, player) || alien.y + alien.height >= player.y) gameOver = true;
 
@@ -299,10 +333,11 @@ function gameLoop() {
             // Check collision vs aliens
             for (let j = aliens.length - 1; j >= 0; j--) {
                 const alien = aliens[j];
-                if (!rectsIntersect(projectile, alien)) continue;
+                if (alien.state !== 'alive' || !rectsIntersect(projectile, alien)) continue;
 
                 projectile.markedForDeletion = true;
-                aliens.splice(j, 1);
+                alien.state = 'dying';
+                alien.deathTimer = Date.now();
                 score += 100;
                 updateHUD();
 
