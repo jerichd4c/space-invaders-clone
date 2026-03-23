@@ -179,7 +179,7 @@ class Projectile {
 }
 
 class Alien {
-    constructor(x, y, row, col) {
+    constructor(x, y, col) {
         this.width = 65;
         this.height = 50;
         this.x = x;
@@ -187,7 +187,6 @@ class Alien {
         this.state = 'alive';
         this.deathTimer = 0;
         this.markedForDeletion = false;
-        this.row = row;
         this.col = col;
     }
 
@@ -289,7 +288,7 @@ function createFormation(rows = 4, cols = 8) {
         for (let c = 0; c < cols; c++) {
             const x = startX + c * (65 + gapX);
             const y = startY + r * (50 + gapY);
-            aliens.push(new Alien(x, y, r, c));
+            aliens.push(new Alien(x, y, c));
         }
     }
     formationDirection = 1;
@@ -312,11 +311,11 @@ function saveHighscores(scores) {
 
 function recordHighscore(value) {
     const scores = loadHighscores();
-    scores.push({ score: value, date: Date.now() });
+    scores.push({ score: value });
     scores.sort((a, b) => b.score - a.score);
-    const trimmed = scores.slice(0, 10);
-    saveHighscores(trimmed);
-    return trimmed;
+    const top = scores.slice(0, 10);
+    saveHighscores(top);
+    return top;
 }
 
 function startNewGame() {
@@ -403,9 +402,9 @@ function drawHighscoreScreen() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = '#33ff00';
     ctx.textAlign = 'center';
-    ctx.font = '40px arial Black';
+    ctx.font = '40px Arial Black';
     ctx.fillText('HIGH SCORE', canvas.width / 2, 200);
-    ctx.font = '24px arial Black';
+    ctx.font = '24px Arial Black';
     const scores = loadHighscores();
     if (!scores.length) {
         ctx.fillText('NO SCORES YET', canvas.width / 2, 260);
@@ -546,7 +545,7 @@ function gameLoop() {
         player.update();
     }
 
-    // Draw new frame  
+    // Draw new frame
     player.draw(ctx);
 
     // Update and draw barriers
