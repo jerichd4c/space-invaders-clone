@@ -48,6 +48,9 @@ let stage = 1;
 const formationSpeedBase = 0.5;
 let formationSpeed = formationSpeedBase;
 let score = 0;
+let gameState = 'menu';
+const menuOptions = ['NEW GAME', 'HIGH SCORE', 'QUIT GAME'];
+let selectedMenuIndex = 0;
 
 function updateHUD() {
     stageValue.textContent = stage;
@@ -68,9 +71,14 @@ const alienShootChance = 0.35;
 
 
 window.addEventListener('keydown', (e) => {
-    if (keys.hasOwnProperty(e.code)) {
-        keys[e.code] = true;
-        e.preventDefault();
+    if (gameState === 'playing') {
+        if (keys.hasOwnProperty(e.code)) {
+            keys[e.code] = true;
+            e.preventDefault();
+        }
+    } else {
+        const handled = handleMenuInput(e);
+        if (handled) e.preventDefault();
     }
 });
 
@@ -287,6 +295,162 @@ function createFormation(rows = 4, cols = 8) {
     formationDirection = 1;
 }
 
+function loadHighscores() {
+    try {
+        const raw = localStorage.getItem('si-highscores');
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+    } catch (err) {
+        return [];
+    }
+}
+
+function saveHighscores(scores) {
+    localStorage.setItem('si-highscores', JSON.stringify(scores));
+}
+
+function recordHighscore(value) {
+    const scores = loadHighscores();
+    scores.push({ score: value, date: Date.now() });
+    scores.sort((a, b) => b.score - a.score);
+    const trimmed = scores.slice(0, 10);
+    saveHighscores(trimmed);
+    return trimmed;
+}
+
+function startNewGame() {
+    stage = 1;
+    score = 0;
+    gameOver = false;
+    player.state = 'alive';
+    player.deathTimer = 0;
+    player.x = canvas.width / 2 - player.width / 2;
+    player.y = canvas.height - player.height - 60;
+    keys.ArrowLeft = false;
+    keys.ArrowRight = false;
+    keys.Space = false;
+    playerProjectiles.length = 0;
+    enemyProjectiles.length = 0;
+    initBarriers();
+    createFormation();
+    updateHUD();
+    gameState = 'playing';
+}
+
+function handleMenuInput(e) {
+    if (gameState === 'menu') {
+        if (e.code === 'ArrowUp') {
+            selectedMenuIndex = (selectedMenuIndex + menuOptions.length - 1) % menuOptions.length;
+            return true;
+        }
+        if (e.code === 'ArrowDown') {
+            selectedMenuIndex = (selectedMenuIndex + 1) % menuOptions.length;
+            return true;
+        }
+        if (e.code === 'Enter' || e.code === 'Space') {
+            const choice = menuOptions[selectedMenuIndex];
+            if (choice === 'NEW GAME') startNewGame();
+            else if (choice === 'HIGH SCORE') gameState = 'highscores';
+            else if (choice === 'QUIT GAME') gameState = 'quit';
+            return true;
+        }
+    } else if (gameState === 'highscores') {
+        if (e.code === 'Enter' || e.code === 'Space' || e.code === 'Escape') {
+            gameState = 'menu';
+            selectedMenuIndex = 0;
+            return true;
+        }
+    } else if (gameState === 'gameover') {
+        if (e.code === 'Enter' || e.code === 'Space') {
+            gameState = 'menu';
+            selectedMenuIndex = 0;
+            return true;
+        }
+    } else if (gameState === 'quit') {
+        if (e.code === 'Enter' || e.code === 'Space') {
+            window.close();
+            return true;
+        }
+        if (e.code === 'Escape') {
+            gameState = 'menu';
+            selectedMenuIndex = 0;
+            return true;
+        }
+    }
+    return false;
+}
+
+function drawMenuScreen() {
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#33ff00';
+    ctx.font = '48px Arial Black';
+    ctx.textAlign = 'center';
+    ctx.fillText('SPACE INVADERS', canvas.width / 2, 220);
+    ctx.font = '28px Arial Black';
+    menuOptions.forEach((opt, idx) => {
+        const y = 360 + idx * 50;
+        const prefix = idx === selectedMenuIndex ? '▶ ' : '  ';
+        ctx.fillText(`${prefix}${opt}`, canvas.width / 2, y);
+    });
+    ctx.font = '20px Arial Black';
+    ctx.fillText('Use ↑ ↓ and ENTER', canvas.width / 2, 560);
+}
+
+function drawHighscoreScreen() {
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#33ff00';
+    ctx.textAlign = 'center';
+    ctx.font = '40px arial Black';
+    ctx.fillText('HIGH SCORE', canvas.width / 2, 200);
+    ctx.font = '24px arial Black';
+    const scores = loadHighscores();
+    if (!scores.length) {
+        ctx.fillText('NO SCORES YET', canvas.width / 2, 260);
+    } else {
+        scores.slice(0, 8).forEach((entry, idx) => {
+            const y = 250 + idx * 40;
+            ctx.fillText(`${idx + 1}. ${entry.score.toString().padStart(5, '0')}`, canvas.width / 2, y);
+        });
+    }
+    ctx.font = '20px Courier New';
+    ctx.fillText('ENTER TO RETURN', canvas.width / 2, 650);
+}
+
+function drawGameOverScreen() {
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#33ff00';
+    ctx.textAlign = 'center';
+    ctx.font = '48px Courier New';
+    ctx.fillText('GAME OVER', canvas.width / 2, 300);
+    ctx.font = '28px Courier New';
+    ctx.fillText(`SCORE ${score.toString().padStart(5, '0')}`, canvas.width / 2, 360);
+    ctx.font = '20px Courier New';
+    ctx.fillText('ENTER TO MENU', canvas.width / 2, 430);
+}
+
+function drawQuitScreen() {
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#33ff00';
+    ctx.textAlign = 'center';
+    ctx.font = '40px Courier New';
+    ctx.fillText('THANKS FOR PLAYING', canvas.width / 2, 340);
+    ctx.font = '22px Courier New';
+    ctx.fillText('CLOSE THE TAB OR WINDOW', canvas.width / 2, 390);
+    ctx.fillText('PRESS ESC TO RETURN', canvas.width / 2, 430);
+}
+
+function endGame() {
+    if (gameOver) return;
+    gameOver = true;
+    gameState = 'gameover';
+    recordHighscore(score);
+}
+
 function getFrontlineAliens() {
     const frontlineByCol = new Map();
 
@@ -308,7 +472,7 @@ class EnemyProjectile {
         this.width = 4;
         this.height = 14;
         this.speed = 3;
-        this.color = 'lime';
+        this.color = 'white';
         this.markedForDeletion = false;
     }
 
@@ -352,6 +516,30 @@ function tryAlienShoot() {
 function gameLoop() {
     // Clear the canvas for the next frame
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (gameState === 'menu') {
+        drawMenuScreen();
+        requestAnimationFrame(gameLoop);
+        return;
+    }
+
+    if (gameState === 'highscores') {
+        drawHighscoreScreen();
+        requestAnimationFrame(gameLoop);
+        return;
+    }
+
+    if (gameState === 'gameover') {
+        drawGameOverScreen();
+        requestAnimationFrame(gameLoop);
+        return;
+    }
+
+    if (gameState === 'quit') {
+        drawQuitScreen();
+        requestAnimationFrame(gameLoop);
+        return;
+    }
 
     // Update and draw the player
     if (!gameOver) {
@@ -414,11 +602,11 @@ function gameLoop() {
         if (!gameOver && alien.state === 'alive') {
             alien.x += formationSpeed * formationDirection;
             if (rectsIntersect(alien, player) || alien.y + alien.height >= player.y) {
-                gameOver = true;
                 player.state = 'dying';
                 player.deathTimer = Date.now();
                 sounds.crash.currentTime = 0;
                 sounds.crash.play().catch(() => { });
+                endGame();
             }
 
             // Check collision vs barriers
@@ -448,11 +636,11 @@ function gameLoop() {
 
         if (!projectile.markedForDeletion && player.state === 'alive' && rectsIntersect(projectile, player)) {
             projectile.markedForDeletion = true;
-            gameOver = true;
             player.state = 'dying';
             player.deathTimer = Date.now();
             sounds.crash.currentTime = 0;
             sounds.crash.play().catch(() => { });
+            endGame();
         }
 
         if (!projectile.markedForDeletion) {
@@ -508,15 +696,6 @@ function gameLoop() {
         } else {
             playerProjectiles.splice(i, 1);
         }
-    }
-
-    if (gameOver) {
-        ctx.fillStyle = 'white';
-        ctx.font = '28px Courier New';
-        ctx.textAlign = 'center';
-        ctx.fillText('Game Over', canvas.width / 2, canvas.height / 2);
-        ctx.font = '20px Courier New';
-        ctx.fillText(`Final Score: ${score}`, canvas.width / 2, canvas.height / 2 + 30);
     }
 
     // Request the next frame and repeat the loop
