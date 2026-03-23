@@ -61,6 +61,10 @@ const keys = {
 };
 
 const playerProjectiles = [];
+const enemyProjectiles = [];
+let lastAlienShotTime = 0;
+const alienShootCooldownBase = 1200;
+const alienShootChance = 0.35;
 
 
 window.addEventListener('keydown', (e) => {
@@ -167,7 +171,7 @@ class Projectile {
 }
 
 class Alien {
-    constructor(x, y) {
+    constructor(x, y, row, col) {
         this.width = 65;
         this.height = 50;
         this.x = x;
@@ -175,6 +179,8 @@ class Alien {
         this.state = 'alive';
         this.deathTimer = 0;
         this.markedForDeletion = false;
+        this.row = row;
+        this.col = col;
     }
 
     draw(ctx) {
@@ -275,10 +281,70 @@ function createFormation(rows = 4, cols = 8) {
         for (let c = 0; c < cols; c++) {
             const x = startX + c * (65 + gapX);
             const y = startY + r * (50 + gapY);
-            aliens.push(new Alien(x, y));
+            aliens.push(new Alien(x, y, r, c));
         }
     }
     formationDirection = 1;
+}
+
+function getFrontlineAliens() {
+    const frontlineByCol = new Map();
+
+    aliens.forEach((alien) => {
+        if (alien.state !== 'alive') return;
+        const existing = frontlineByCol.get(alien.col);
+        if (!existing || alien.y > existing.y) {
+            frontlineByCol.set(alien.col, alien);
+        }
+    });
+
+    return Array.from(frontlineByCol.values());
+}
+
+class EnemyProjectile {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.width = 4;
+        this.height = 14;
+        this.speed = 3;
+        this.color = 'lime';
+        this.markedForDeletion = false;
+    }
+
+    draw(ctx) {
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+    }
+
+    update() {
+        this.y += this.speed;
+        if (this.y > canvas.height) {
+            this.markedForDeletion = true;
+        }
+    }
+}
+
+function getAlienShootCooldown() {
+    return Math.max(450, alienShootCooldownBase - (stage - 1) * 80);
+}
+
+function tryAlienShoot() {
+    if (gameOver || aliens.length === 0) return;
+
+    const now = Date.now();
+    if (now - lastAlienShotTime < getAlienShootCooldown()) return;
+    if (Math.random() > alienShootChance) return;
+
+    const frontline = getFrontlineAliens();
+    if (!frontline.length) return;
+
+    const shooter = frontline[Math.floor(Math.random() * frontline.length)];
+    enemyProjectiles.push(new EnemyProjectile(shooter.x + shooter.width / 2 - 2, shooter.y + shooter.height));
+    lastAlienShotTime = now;
+
+    sounds.shoot.currentTime = 0;
+    sounds.shoot.play().catch(() => { });
 }
 
 // Game loop
@@ -366,11 +432,44 @@ function gameLoop() {
         alien.draw(ctx);
     }
 
+    tryAlienShoot();
+
     if (!gameOver && aliens.length === 0) {
         stage += 1;
         playerProjectiles.length = 0;
+        enemyProjectiles.length = 0;
         createFormation();
         updateHUD();
+    }
+
+    for (let i = enemyProjectiles.length - 1; i >= 0; i--) {
+        const projectile = enemyProjectiles[i];
+        projectile.update();
+
+        if (!projectile.markedForDeletion && player.state === 'alive' && rectsIntersect(projectile, player)) {
+            projectile.markedForDeletion = true;
+            gameOver = true;
+            player.state = 'dying';
+            player.deathTimer = Date.now();
+            sounds.crash.currentTime = 0;
+            sounds.crash.play().catch(() => { });
+        }
+
+        if (!projectile.markedForDeletion) {
+            for (let b = 0; b < barrierBlocks.length; b++) {
+                if (!barrierBlocks[b].markedForDeletion && rectsIntersect(projectile, barrierBlocks[b])) {
+                    barrierBlocks[b].markedForDeletion = true;
+                    projectile.markedForDeletion = true;
+                    break;
+                }
+            }
+        }
+
+        if (!projectile.markedForDeletion) {
+            projectile.draw(ctx);
+        } else {
+            enemyProjectiles.splice(i, 1);
+        }
     }
 
     for (let i = playerProjectiles.length - 1; i >= 0; i--) {
