@@ -45,7 +45,7 @@ let gameOver = false;
 let formationDirection = 1;
 const formationDrop = 20;
 let stage = 1;
-const formationSpeedBase = 0.4;
+const formationSpeedBase = 0.5;
 let formationSpeed = formationSpeedBase;
 let score = 0;
 let gameState = 'menu';
@@ -253,7 +253,7 @@ let barrierBlocks = [];
 
 function initBarriers() {
     barrierBlocks = [];
-    const spacing = 200;
+    const spacing = canvas.width / 5;
     const blockSize = 21;
     const shape = [
         [0, 1, 1, 1, 1, 0],
@@ -263,9 +263,7 @@ function initBarriers() {
     ];
 
     for (let i = 0; i < 4; i++) {
-        // Center the 4 barriers (spacing * i) and offset to center the group on canvas
-        const groupWidth = 3 * spacing;
-        const startX = (canvas.width - groupWidth) / 2 + i * spacing - (shape[0].length * blockSize) / 2;
+        const startX = spacing * (i + 1) - (shape[0].length * blockSize) / 2;
         const startY = canvas.height - 240;
 
         for (let r = 0; r < shape.length; r++) {
@@ -393,10 +391,10 @@ function drawMenuScreen() {
     ctx.font = '72px "Color 1860"';
     ctx.fillText('SPACE INVADERS', canvas.width / 2, 200);
 
-    // Opciones con Press Start 2P
-    ctx.font = '14px "Press Start 2P", monospace';
+    // Opciones con Press Start 2P (más grandes para mejor lectura)
+    ctx.font = '20px "Press Start 2P", monospace';
     const startY = 320;
-    const step = 40;
+    const step = 46;
     menuOptions.forEach((opt, idx) => {
         const y = startY + idx * step;
         const prefix = idx === selectedMenuIndex ? '▶ ' : '  ';
