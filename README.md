@@ -1,5 +1,6 @@
 # 👾 Space Invaders Clone - Web Development 1 Project
 
+![Gameplay Preview](./invaders.gif)
 This project is a high-fidelity clone of the classic arcade game *Space Invaders*, developed from scratch using vanilla web technologies without any additional frameworks.
 
 ## 🛠️ Technologies Used
