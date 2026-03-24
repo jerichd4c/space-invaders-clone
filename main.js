@@ -51,6 +51,7 @@ let score = 0;
 let gameState = 'menu';
 const menuOptions = ['NEW GAME', 'HIGH SCORE', 'QUIT GAME'];
 let selectedMenuIndex = 0;
+let gameOverAt = null;
 
 function updateHUD() {
     stageValue.textContent = stage;
@@ -322,6 +323,7 @@ function startNewGame() {
     stage = 1;
     score = 0;
     gameOver = false;
+    gameOverAt = null;
     player.state = 'alive';
     player.deathTimer = 0;
     player.x = canvas.width / 2 - player.width / 2;
@@ -383,28 +385,35 @@ function handleMenuInput(e) {
 function drawMenuScreen() {
     ctx.fillStyle = 'black';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#33ff00';
-    ctx.font = '48px Arial Black';
+    ctx.fillStyle = 'white';
     ctx.textAlign = 'center';
-    ctx.fillText('SPACE INVADERS', canvas.width / 2, 220);
-    ctx.font = '28px Arial Black';
+    // Título con otra fuente para diferenciarlo
+    ctx.font = '72px "Color 1860"';
+    ctx.fillText('SPACE INVADERS', canvas.width / 2, 200);
+
+    // Opciones con Press Start 2P
+    ctx.font = '14px "Press Start 2P", monospace';
+    const startY = 320;
+    const step = 40;
     menuOptions.forEach((opt, idx) => {
-        const y = 360 + idx * 50;
+        const y = startY + idx * step;
         const prefix = idx === selectedMenuIndex ? '▶ ' : '  ';
         ctx.fillText(`${prefix}${opt}`, canvas.width / 2, y);
     });
-    ctx.font = '20px Arial Black';
-    ctx.fillText('Use ↑ ↓ and ENTER', canvas.width / 2, 560);
+
+    // Hint de control con Press Start 2P
+    ctx.font = '10px "Press Start 2P", monospace';
+    ctx.fillText('USE ↑ ↓ AND ENTER', canvas.width / 2, 520);
 }
 
 function drawHighscoreScreen() {
     ctx.fillStyle = 'black';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#33ff00';
+    ctx.fillStyle = 'white';
     ctx.textAlign = 'center';
-    ctx.font = '40px Arial Black';
+    ctx.font = '24px "Press Start 2P", monospace';
     ctx.fillText('HIGH SCORE', canvas.width / 2, 200);
-    ctx.font = '24px Arial Black';
+    ctx.font = '14px "Press Start 2P", monospace';
     const scores = loadHighscores();
     if (!scores.length) {
         ctx.fillText('NO SCORES YET', canvas.width / 2, 260);
@@ -414,7 +423,7 @@ function drawHighscoreScreen() {
             ctx.fillText(`${idx + 1}. ${entry.score.toString().padStart(5, '0')}`, canvas.width / 2, y);
         });
     }
-    ctx.font = '20px Courier New';
+    ctx.font = '10px "Press Start 2P", monospace';
     ctx.fillText('ENTER TO RETURN', canvas.width / 2, 650);
 }
 
@@ -423,30 +432,37 @@ function drawGameOverScreen() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = '#33ff00';
     ctx.textAlign = 'center';
-    ctx.font = '48px Courier New';
+    ctx.font = '20px "Press Start 2P", monospace';
     ctx.fillText('GAME OVER', canvas.width / 2, 300);
-    ctx.font = '28px Courier New';
+    ctx.font = '12px "Press Start 2P", monospace';
     ctx.fillText(`SCORE ${score.toString().padStart(5, '0')}`, canvas.width / 2, 360);
-    ctx.font = '20px Courier New';
+    ctx.font = '10px "Press Start 2P", monospace';
     ctx.fillText('ENTER TO MENU', canvas.width / 2, 430);
 }
 
 function drawQuitScreen() {
     ctx.fillStyle = 'black';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#33ff00';
+    ctx.fillStyle = 'white';
     ctx.textAlign = 'center';
-    ctx.font = '40px Courier New';
+    ctx.font = '14px "Press Start 2P", monospace';
     ctx.fillText('THANKS FOR PLAYING', canvas.width / 2, 340);
-    ctx.font = '22px Courier New';
+    ctx.font = '10px "Press Start 2P", monospace';
     ctx.fillText('CLOSE THE TAB OR WINDOW', canvas.width / 2, 390);
     ctx.fillText('PRESS ESC TO RETURN', canvas.width / 2, 430);
 }
 
-function endGame() {
+function startDeathSequence() {
     if (gameOver) return;
     gameOver = true;
+    gameState = 'dying';
+    gameOverAt = Date.now() + 2000;
+}
+
+function finishGameOver() {
+    if (gameState !== 'dying') return;
     gameState = 'gameover';
+    gameOverAt = null;
     recordHighscore(score);
 }
 
@@ -534,6 +550,13 @@ function gameLoop() {
         return;
     }
 
+    if (gameState === 'dying' && gameOverAt && Date.now() >= gameOverAt) {
+        finishGameOver();
+        drawGameOverScreen();
+        requestAnimationFrame(gameLoop);
+        return;
+    }
+
     if (gameState === 'quit') {
         drawQuitScreen();
         requestAnimationFrame(gameLoop);
@@ -605,7 +628,7 @@ function gameLoop() {
                 player.deathTimer = Date.now();
                 sounds.crash.currentTime = 0;
                 sounds.crash.play().catch(() => { });
-                endGame();
+                startDeathSequence();
             }
 
             // Check collision vs barriers
@@ -639,7 +662,7 @@ function gameLoop() {
             player.deathTimer = Date.now();
             sounds.crash.currentTime = 0;
             sounds.crash.play().catch(() => { });
-            endGame();
+            startDeathSequence();
         }
 
         if (!projectile.markedForDeletion) {
