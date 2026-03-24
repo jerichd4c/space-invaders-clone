@@ -45,7 +45,7 @@ let gameOver = false;
 let formationDirection = 1;
 const formationDrop = 20;
 let stage = 1;
-const formationSpeedBase = 0.5;
+const formationSpeedBase = 0.4;
 let formationSpeed = formationSpeedBase;
 let score = 0;
 let gameState = 'menu';
@@ -253,7 +253,7 @@ let barrierBlocks = [];
 
 function initBarriers() {
     barrierBlocks = [];
-    const spacing = canvas.width / 5;
+    const spacing = 200;
     const blockSize = 21;
     const shape = [
         [0, 1, 1, 1, 1, 0],
@@ -263,7 +263,9 @@ function initBarriers() {
     ];
 
     for (let i = 0; i < 4; i++) {
-        const startX = spacing * (i + 1) - (shape[0].length * blockSize) / 2;
+        // Center the 4 barriers (spacing * i) and offset to center the group on canvas
+        const groupWidth = 3 * spacing;
+        const startX = (canvas.width - groupWidth) / 2 + i * spacing - (shape[0].length * blockSize) / 2;
         const startY = canvas.height - 240;
 
         for (let r = 0; r < shape.length; r++) {
