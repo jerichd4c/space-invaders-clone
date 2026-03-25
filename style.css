@@ -31,7 +31,7 @@ body {
 
 #gameCanvas {
     background-color: #000;
-    border: 2px solid #33ff00;
+    border: 2px solid white;
     image-rendering: pixelated; /* Evita que los sprites se vean borrosos */
 }
 
