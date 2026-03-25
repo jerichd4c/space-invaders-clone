@@ -4,7 +4,7 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-  <img src="invaders.gif" alt="Gameplay Preview" width="480">
+  <img src="invaders.gif" alt="Gameplay Preview">
 
 <h3 align="center">👾 Space Invaders Clone</h3>
 
