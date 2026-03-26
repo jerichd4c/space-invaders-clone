@@ -2,7 +2,6 @@
 <a id="readme-top"></a>
 
 <!-- PROJECT LOGO -->
-<br />
 <div align="center">
   <img src="invaders.gif" alt="Gameplay Preview">
 
