@@ -5,7 +5,7 @@
 <div align="center">
   <img src="invaders.gif" alt="Gameplay Preview">
 
-<h3 align="center">Space Invaders Clone 👾</h3>
+<h3 align="center">Space Invaders Clone</h3>
 
   <p align="center">
     A high-fidelity clone of the classic arcade game <em>Space Invaders</em>, built from scratch using vanilla web technologies — no frameworks.
