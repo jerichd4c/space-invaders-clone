@@ -1,4 +1,4 @@
-<!-- Improved compatibility of back to top link: See: https://github.com/othneildrew/Best-README-Template/pull/73 -->
+ <!-- Improved compatibility of back to top link: See: https://github.com/othneildrew/Best-README-Template/pull/73 -->
 <a id="readme-top"></a>
 
 <!-- PROJECT LOGO -->
@@ -90,7 +90,11 @@ All you need is a modern web browser. No Node.js, npm, or build tools required.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
+## Roadmap
 
+- [ ] Modularize the source code for better maintainability.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- USAGE EXAMPLES -->
 ## Usage
