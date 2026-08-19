@@ -1,6 +1,12 @@
  <!-- Improved compatibility of back to top link: See: https://github.com/othneildrew/Best-README-Template/pull/73 -->
 <a id="readme-top"></a>
 
+<!-- LANGUAGE BADGE -->
+<div align="center">
+  <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" alt="JavaScript" width="200" height="40">
+</div>
+
+
 <!-- PROJECT LOGO -->
 <div align="center">
   <img src="invaders.gif" alt="Gameplay Preview">
