@@ -1,9 +1,11 @@
  <!-- Improved compatibility of back to top link: See: https://github.com/othneildrew/Best-README-Template/pull/73 -->
 <a id="readme-top"></a>
 
-<!-- LANGUAGE BADGE -->
+<!-- PROJECT LOGO -->
 <div align="center">
-  <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" alt="JavaScript" width="200" height="40">
+  <a href="https://github.com/jerichd4c/space-invaders-clone">
+    <img src="https://raw.githubusercontent.com/jerichd4c/ReflexJDBC/main/javascript_logo.svg" alt="Logo" width="80" height="80">
+  </a>
 </div>
 
 
