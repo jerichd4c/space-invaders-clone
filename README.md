@@ -9,9 +9,7 @@
 </div>
 
 
-<!-- PROJECT LOGO -->
 <div align="center">
-  <img src="invaders.gif" alt="Gameplay Preview">
 
 <h3 align="center">Space Invaders Clone</h3>
 
@@ -50,6 +48,10 @@
 ## About The Project
 
 This project is a high-fidelity clone of the classic arcade game *Space Invaders*, developed from scratch using vanilla web technologies. It features pixel-art sprites, destructible barriers, progressive difficulty, retro sound effects, and a full game cycle — all without any external frameworks or libraries.
+
+<div align="center">
+  <img src="invaders.gif" alt="Gameplay Preview">
+</div>
 
 **Key Features:**
 * **Fluid Mechanics:** Responsive player movement and firing system.
